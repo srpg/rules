@@ -10,8 +10,12 @@ get_rules = ['No Spawn Killing', 'No Flaming', 'No Chat/Mic Spam', 'No Bomb Grie
 
 if SOURCE_ENGINE == 'csgo':
 	close_button = 9
+	yes_button = 8
+	no_button = 7
 else:
 	close_button = 0
+	yes_button = 9
+	no_button = 8
 
 @Event('player_activate')
 def player_activate(args):
@@ -27,8 +31,8 @@ def rules(userid):
 	menu.append(Text(' '))
 	menu.append(Text('Do you accept the rules?'))
 	menu.append(Text(' '))
-	menu.append(SimpleOption(8, 'No', 'No'))
-	menu.append(SimpleOption(9, 'Yes', 'Yes'))
+	menu.append(SimpleOption(no_button, 'No', 'No'))
+	menu.append(SimpleOption(yes_button, 'Yes', 'Yes'))
 	menu.append(SimpleOption(close_button, 'Close', 0))
 	@menu.register_close_callback
 	def on_close_checkpoints_menu(menu, index):
