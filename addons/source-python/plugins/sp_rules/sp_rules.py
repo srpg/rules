@@ -1,52 +1,40 @@
-from core import SOURCE_ENGINE
-from engines.server import queue_command_string
 from players.entity import Player
-from players.helpers import index_from_userid, userid_from_index
 from events import Event
 from menus import SimpleMenu, SimpleOption, Text
 from messages import SayText2
 
 get_rules = ['No Spawn Killing', 'No Flaming', 'No Chat/Mic Spam', 'No Bomb Griefing', 'No Other Servers Adverting', 'No Bug Abuse', 'No Suicide'] # The rules text for menu
 
-if SOURCE_ENGINE == 'csgo':
-	close_button = 9
-	yes_button = 8
-	no_button = 7
-else:
-	close_button = 0
-	yes_button = 9
-	no_button = 8
+rules_accepted_message = SayText2('\x04Thank you for accepting the rules and have fun playing on the server!')
 
 @Event('player_activate')
 def player_activate(args):
-	userid = args.get_int('userid')
-	Player(index_from_userid(userid)).delay(2.0, rules, (userid,))
+	player = Player.from_userid(args['userid'])
+	player.delay(2.0, rules_menu.send, (player.index,))
 
-def rules(userid):
-	menu = SimpleMenu()
-	menu.append(Text('The Rules'))
-	menu.append(Text(' '))
-	for i in get_rules:
-		menu.append(Text('%s' % (i)))
+def rules_menu_callback(menu, index, option):
+	choice = option.value
+	if choice == 'no':
+		Player(index).kick('You have to accept the rules!')
+	elif choice == 'yes':
+		rules_accepted_message.send(index)
+
+def build_rules_menu(menu, index):
+	menu.clear()
+	menu.append(Text('Server rules'))
 	menu.append(Text(' '))
 	menu.append(Text('Do you accept the rules?'))
 	menu.append(Text(' '))
-	menu.append(SimpleOption(no_button, 'No', 'No'))
-	menu.append(SimpleOption(yes_button, 'Yes', 'Yes'))
-	menu.append(SimpleOption(close_button, 'Close', 0))
+	for rule in get_rules:
+		menu.append(Text(rule))
+	menu.append(SimpleOption(1, 'No', 'no'))
+	menu.append(SimpleOption(2, 'Yes', 'yes'))
+	menu.append(Text(' '))
+	menu.append(SimpleOption(0, 'No', None))
 	@menu.register_close_callback
-	def on_close_checkpoints_menu(menu, index):
-		queue_command_string('kickid %s You have to accept the rules!' % (userid))
-	menu.select_callback = rule_menu_callback
-	menu.send(index_from_userid(userid))
-	
+	def on_close_rules_menu(menu, index):
+		Player(index).kick('You have to accept the rules!')
 
-def rule_menu_callback(_menu, _index, _option):
-	choice = _option.value
-	if choice:
-		userid = userid_from_index(_index)        
-		if choice == 'No':
-			queue_command_string('kickid %s You have to accept the rules!' % (userid))
-		elif choice == 'Yes':
-			SayText2('\x04Thank you for accepting the rules and have fun!').send(_index)
-     	    
+rules_menu = SimpleMenu()
+rules_menu.build_callback = build_rules_menu
+rules_menu.select_callback = rules_menu_callback
